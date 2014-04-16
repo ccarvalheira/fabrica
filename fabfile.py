@@ -145,7 +145,7 @@ def generate_ha_gearman_nodes(nodes):
     return stri+generate_nodes(nodes)
 
 def generate_ha_api_nodes(nodes):
-    stri = "listen api-nodes 0.0.0.0:80\n\tmode tcp\n\toption tcplog\n\tbalance leastconn\n"
+    stri = "listen api-nodes 0.0.0.0:8001\n\tmode tcp\n\toption tcplog\n\tbalance leastconn\n"
     return stri+generate_nodes(nodes)
 
 def create_ha_config(group):

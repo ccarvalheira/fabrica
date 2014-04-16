@@ -1,1 +1,1 @@
-WORKER_LIST = %(server_list)s
+JOBSERVER_LIST = %(server_list)s
