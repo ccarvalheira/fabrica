@@ -138,7 +138,7 @@ commit_failure_policy: stop
 #
 # NOTE: if you reduce the size, you may not get you hottest keys loaded on startup.
 #
-# Default value is empty to make it "auto" (min(5% of Heap (in MB), 100MB)). Set to 0 to disable key cache.
+# Default value is empty to make it "auto" (min(5percent of Heap (in MB), 100MB)). Set to 0 to disable key cache.
 key_cache_size_in_mb:
 
 # Duration in seconds after which Cassandra should
@@ -234,7 +234,7 @@ seed_provider:
       parameters:
           # seeds is actually a comma-delimited list of addresses.
           # Ex: "<ip1>,<ip2>,<ip3>"
-          - seeds: "192.168.186.185"
+          - seeds: "%(seed_ips)s"
 
 # For workloads with more data than can fit in memory, Cassandra's
 # bottleneck will be reads that need to fetch data from
@@ -304,7 +304,7 @@ ssl_storage_port: 7001
 # address associated with the hostname (it might not be).
 #
 # Setting this to 0.0.0.0 is always wrong.
-listen_address: 192.168.186.185
+listen_address: %(listen_addr)s
 
 # Address to broadcast to other Cassandra nodes
 # Leaving this blank will set it to the same value as listen_address
@@ -361,7 +361,7 @@ rpc_keepalive: true
 #          of thrift clients (and thus scales well to many clients). The rpc requests are still
 #          synchronous (one thread per active request).
 #
-# The default is sync because on Windows hsha is about 30% slower.  On Linux,
+# The default is sync because on Windows hsha is about 30percent slower.  On Linux,
 # sync/hsha performance is about the same, with hsha of course using less memory.
 #
 # Alternatively,  can provide your own RPC server by providing the fully-qualified class name
@@ -584,7 +584,7 @@ dynamic_snitch_reset_interval_in_ms: 600000
 # before the dynamic snitch will prefer other replicas over it.  This is
 # expressed as a double which represents a percentage.  Thus, a value of
 # 0.2 means Cassandra would continue to prefer the static snitch values
-# until the pinned host was 20% worse than the fastest.
+# until the pinned host was 20percent worse than the fastest.
 dynamic_snitch_badness_threshold: 0.1
 
 # request_scheduler -- Set this to a class that implements
