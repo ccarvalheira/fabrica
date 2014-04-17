@@ -111,7 +111,8 @@ def update_postgres(group, slave):
             sudo("sudo -u postgres psql --file=create_slave.sql")
         
         sudo("service postgresql stop")
-        master_ip = INV["opstore_master"]
+        
+        master_ip = INV[group+"_master"]
         sudo("sudo -u postgres rm -rf /var/lib/postgresql/9.1/main")
         sudo("sudo -u postgres pg_basebackup -h %s -D /var/lib/postgresql/9.1/main -U repl -v -P" % (master_ip,))
         sudo("""sudo -u postgres bash -c "cat > /var/lib/postgresql/9.1/main/recovery.conf <<- _EOF1_
@@ -199,7 +200,7 @@ def update_api_config(group):
 
 def install_api(group, update):
     if not update:
-        sudo("apt-get install python-dev python-virtualenv git-core libpq-dev libxml2-dev libxslt1-dev -y")
+        sudo("apt-get install python-dev python-virtualenv build-essential git-core libpq-dev libxml2-dev libxslt1-dev -y")
         if not exists("wsep"):
             run("mkdir wsep")
         with cd("wsep"):
@@ -221,13 +222,14 @@ def install_api(group, update):
 #nginx
 def update_nginx(group):
     BASEP = get_basep(group)
-    sudo("rm /etc/nginx/sites-enabled/default")
+    if exists("/etc/nginx/sites-enabled/default"):
+        sudo("rm /etc/nginx/sites-enabled/default")
     put(BASEP+"api.conf", "/etc/nginx/sites-enabled/api.conf", use_sudo=True)
     sudo("service nginx restart")
 
 def install_nginx(group, update):
     if not update:
-        sudo("apt-get install nginx")
+        sudo("apt-get install nginx -y")
     update_nginx(group)    
 ###
 
@@ -245,8 +247,9 @@ def install_blobstore(group, update=False):
         run('sh add-btsync-repository.sh')
         if not exists("fileserver"):
             run("mkdir fileserver")
-        sudo("apt-get install btsync")
-        sudo("rm /etc/btsync/debconf-default.conf")
+        sudo("apt-get install btsync -y")
+        if exists("/etc/btsync/debconf-default.conf"):
+            sudo("rm /etc/btsync/debconf-default.conf")
     update_blobstore(group)
 ###
 
@@ -258,11 +261,11 @@ def install_blobstore(group, update=False):
 #backend_data_directory0 = '/var/lib/postgresql/9.1/main'
 #backend_flag0 = 'ALLOW_TO_FAILOVER'
 def render_pgpool_node(ip, count):
-    stri = "\nbackend_hostname%s = %s" % (str(count), ip)
+    stri = "\nbackend_hostname%s = '%s'" % (str(count), ip)
     stri += "\nbackend_port%s = 5432" % (str(count),)
     stri += "\nbackend_weight%s = 0" % (str(count),)
-    stri += "\nbackend_data_directory%s = /var/lib/postgresql/9.1/main" % (str(count),)
-    stri += "\nbackend_flag%s = ''ALLOW_TO_FAILOVER'\n\n" % (str(count),)
+    stri += "\nbackend_data_directory%s = '/var/lib/postgresql/9.1/main'" % (str(count),)
+    stri += "\nbackend_flag%s = 'ALLOW_TO_FAILOVER'\n\n" % (str(count),)
     return stri
 
 def generate_pgpool_context(store):
@@ -294,8 +297,14 @@ def install_pgpool(group, update):
             run("./configure")
             run("make")
             sudo("make install")
-        if not exists("/home/ubuntu/pgpool/"):
-            run("mkdir /home/ubuntu/pgpool/")
+        with cd("/home/ubuntu/"):
+            if not exists("pgpool"):
+                run("mkdir pgpool")
+            with cd("pgpool"):
+                if not exists("opdir"):
+                    run("mkdir opdir")
+                if not exists("tripledir"):
+                    run("mkdir tripledir")
     update_pgpool(group)
 ###
 
@@ -351,7 +360,7 @@ def opstore(slave=False, group="opstore"):
         print " ==== Will now install %s slave. ====" % group
     with cd("/home/ubuntu/"):
         sudo("apt-get update")
-        install_base(group, slave)
+        install_base(group, False)
         install_postgres(group, slave)
 
 #done
@@ -369,12 +378,14 @@ def gearmanjob(update=False):
     with cd("/home/ubuntu/"):
         sudo("add-apt-repository ppa:gearman-developers/ppa")
         sudo("apt-get update")
+        install_base(group, update)
         sudo("apt-get install gearman-job-server gearman-tools -y")
+        sudo("service gearman-job-server stop")
         BASEP = get_basep(group)
         put(BASEP+"gearman-job-server", "/etc/init.d/gearman-job-server", use_sudo=True)
         sudo("chown root /etc/init.d/gearman-job-server")
         sudo("chmod +x /etc/init.d/gearman-job-server")
-        sudo("sudo /etc/init.d/gearman-job-server restart")
+        sudo("sudo /etc/init.d/gearman-job-server start")
 
 
 
