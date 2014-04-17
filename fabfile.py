@@ -72,7 +72,7 @@ def install_cassandra(group, update=False):
 
 #collectd
 def update_collectd():
-    upload_template(filename=BASEC + "collectd.conf", destination="/etc/collectd.conf", context = INV, backup=False, use_sudo=True)
+    upload_template(filename=BASEC + "collectd.conf", destination="/etc/collectd/collectd.conf", context = INV, backup=False, use_sudo=True)
     sudo("service collectd restart")
 
 def install_collectd(update=False):
@@ -338,6 +338,56 @@ def install_wsgear(group, update):
 ###
 
 
+#bucky
+def update_bucky(group):
+    BASEP = get_basep(group)
+    put(BASEP+"bucky.conf", "/home/ubuntu/bucky/bucky.conf")
+
+def install_bucky(group, update):
+    if not update:
+        sudo("apt-get install python-virtualenv python-dev build-essential -y")
+        if not exists("bucky"):
+            run("mkdir bucky")
+        with cd("bucky"):
+            run("virtualenv env")
+            run(". env/bin/activate && pip install bucky")
+    update_bucky(group)
+###
+
+#graphite
+def update_graphite(group):
+    BASEP = get_basep(group)
+    put(BASEP+"carbon.conf.example", "/opt/graphite/conf/carbon.conf")
+    put(BASEP+"storage-schemas.conf.example", "/opt/graphite/conf/storage-schemas.conf")
+    #sudo("sudo /opt/graphite/bin/carbon-cache.py start")
+
+def install_graphite(group, update):
+    if not update:
+        sudo("apt-get install python-dev git-core libcairo2-dev python-cairo -y")
+        #we first clone and install dependencies
+        #later we will install the packages from pip
+        #at this time, not all dependencies are resolved
+        if not exists("graphite-web"):
+            run("git clone https://github.com/graphite-project/graphite-web.git")
+            sudo("pip install -r graphite-web/requirements.txt")
+        if not exists("carbon"):
+            run("git clone https://github.com/graphite-project/carbon.git")
+            sudo("pip install -r carbon/requirements.txt")
+        #we will now install the packages themselves
+        sudo("pip install django==1.4")
+        sudo("pip install https://github.com/graphite-project/ceres/tarball/master")
+        sudo("pip install carbon whisper graphite-web supervisor daemonize")
+        #preparing the packages
+        sudo("sudo chown ubuntu -R /opt")
+        run("chmod +x /opt/graphite/webapp/graphite/manage.py")
+        #because we need to run syncdb on installation, we must have the config in local_settings.py
+        #we probably won't be able to update local_settings...
+        BASEP = get_basep(group)
+        put(BASEP+"local_settings.py.example", "/opt/graphite/webapp/graphite/local_settings.py")
+        run("/opt/graphite/webapp/graphite/manage.py syncdb")
+        
+    update_graphite(group)
+###
 
 #done
 def tsstore(update=False):
@@ -388,9 +438,7 @@ def gearmanjob(update=False):
         sudo("sudo /etc/init.d/gearman-job-server start")
 
 
-
-#TODO
-#needs testing
+#done
 def api(update=False):
     if update:
         print " ==== Will now update api. ==== "
@@ -409,8 +457,7 @@ def api(update=False):
         #goes here because supervisord.conf has pgpool-related config
         install_supervisor(group, update)
 
-#TODO
-#falta testar
+#done
 def workers(update=False):
     if update:
         print " ==== Will now update api. ==== "
@@ -423,15 +470,21 @@ def workers(update=False):
         install_wsgear(group, update)
         install_haproxy(group, update)
         install_supervisor(group, update)
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
+
+
+#TODO
+#wip
+def metric(update=False):
+    if update:
+        print " ==== Will now update api. ==== "
+    else:
+        print " ==== Will now install api. ===="
+    group = "metric"
+    with cd("/home/ubuntu"):
+        sudo("apt-get update")
+        install_base(group, update)
+        install_bucky(group, update)
+        install_graphite(group, update)
+        install_supervisor(group, update)
         
         
