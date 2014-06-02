@@ -16,7 +16,7 @@ from fabric.contrib.files import upload_template
 
 from inventory import INV
 
-_BASEP = "/home/ubuntu/fabrica/fabrica/"
+_BASEP = "/home/ec2-user/fabrica/fabrica/"
 BASEC = _BASEP + "conf/"
 
 def get_basep(group):
@@ -30,14 +30,14 @@ def install_pip():
 #supervisor
 def update_supervisor(group):
     BASEP = get_basep(group)
-    put(BASEP + "supervisord.conf", "/home/ubuntu/supervisor/")
+    put(BASEP + "supervisord.conf", "/home/ec2-user/supervisor/")
     put(BASEC + "upstart_supervisor.conf", "/etc/init/supervisor.conf", use_sudo=True)
     sudo("service supervisor restart")
-    run("supervisorctl -c /home/ubuntu/supervisor/supervisord.conf reload")
+    run("supervisorctl -c /home/ec2-user/supervisor/supervisord.conf reload")
 
 
 def install_supervisor(group, update=True):
-    if not exists("/home/ubuntu/supervisor"):
+    if not exists("/home/ec2-user/supervisor"):
         install_pip()
         sudo("pip install supervisor")
         run("mkdir -p supervisor/log")
@@ -53,13 +53,13 @@ def update_cassandra(group):
     con = {}
     con["listen_addr"] = env.hosts[0].split("@")[1]
     con["seed_ips"] = INV["seed_ips"]
-    upload_template(filename=BASEP+"cassandra.yaml", destination="/home/ubuntu/cassandra/conf/cassandra.yaml", context=con, backup=False)
-    put(BASEP+"log4j-server.properties", "/home/ubuntu/cassandra/conf/")
+    upload_template(filename=BASEP+"cassandra.yaml", destination="/home/ec2-user/cassandra/conf/cassandra.yaml", context=con, backup=False)
+    put(BASEP+"log4j-server.properties", "/home/ec2-user/cassandra/conf/")
         
 def install_cassandra(group, update=False):
-    if not exists("/home/ubuntu/cassandra"):
+    if not exists("/home/ec2-user/cassandra"):
         sudo("apt-get install openjdk-7-jre-headless -y")
-        run("wget http://mirrors.fe.up.pt/pub/apache/cassandra/2.0.6/apache-cassandra-2.0.6-bin.tar.gz")
+        run("wget http://archive.apache.org/dist/cassandra/2.0.6/apache-cassandra-2.0.6-bin.tar.gz")
         run("tar xvf apache-cassandra-2.0.6-bin.tar.gz")
         run("mv apache-cassandra-2.0.6 cassandra")
         update_cassandra(group)
@@ -101,13 +101,13 @@ def update_postgres(group, slave):
     put(BASEP+"pg_hba.conf", "/etc/postgresql/9.1/main/", use_sudo=True)
     
     if not slave:
-        put(BASEP+"create_db.sql", "/home/ubuntu/")
-        with cd("/home/ubuntu/"):
+        put(BASEP+"create_db.sql", "/home/ec2-user/")
+        with cd("/home/ec2-user/"):
             sudo("sudo -u postgres psql --file=create_db.sql")
         
     if slave:
-        put(BASEP+"create_slave.sql", "/home/ubuntu/")
-        with cd("/home/ubuntu/"):
+        put(BASEP+"create_slave.sql", "/home/ec2-user/")
+        with cd("/home/ec2-user/"):
             sudo("sudo -u postgres psql --file=create_slave.sql")
         
         sudo("service postgresql stop")
@@ -164,7 +164,7 @@ def create_ha_config(group):
     if group == "api":
         text = text % {"cassandra_nodes_config": cassandra_conf, "gearmanjob_nodes_config":gearman_conf, "api_nodes_config":""}
     elif group == "workers":
-        text = text % {"cassandra_nodes_config": cassandra_conf, "gearmanjob_nodes_config":"", "api_nodes_config": api_conf}
+        text = text % {"cassandra_nodes_config": cassandra_conf, "gearmanjob_nodes_config":"", "api_nodes_config": ""}
         
     return text
 
@@ -194,7 +194,7 @@ def install_haproxy(group, update):
 #api
 def update_api_config(group):
     BASEP = get_basep(group)
-    put(BASEP+".env", "/home/ubuntu/wsep/wsep/.env")
+    put(BASEP+".env", "/home/ec2-user/wsep/wsep/.env")
     update_haproxy(group)
     
 
@@ -211,7 +211,7 @@ def install_api(group, update):
             run(". env/bin/activate && pip install -r wsep/requirements.txt")
         install_haproxy(group, update)
     else:
-        with cd("/home/ubuntu/wsep/wsep/"):
+        with cd("/home/ec2-user/wsep/wsep/"):
             run("git pull")
             run(". ../env/bin/activate && pip install -r requirements.txt")
     update_haproxy(group)
@@ -243,7 +243,7 @@ def update_blobstore(group):
 def install_blobstore(group, update=False):
     BASEP = get_basep(group)
     if not update:
-        put(BASEP+"add-btsync-repository.sh", "/home/ubuntu/add-btsync-repository.sh")
+        put(BASEP+"add-btsync-repository.sh", "/home/ec2-user/add-btsync-repository.sh")
         run('sh add-btsync-repository.sh')
         if not exists("fileserver"):
             run("mkdir fileserver")
@@ -284,9 +284,9 @@ def generate_pgpool_context(store):
 
 def update_pgpool(group):
     BASEP = get_basep(group)
-    upload_template(filename=BASEP+"pgpool_opstore.conf", destination="/home/ubuntu/pgpool/pgpool_opstore.conf", context=generate_pgpool_context("opstore"), backup=False)
+    upload_template(filename=BASEP+"pgpool_opstore.conf", destination="/home/ec2-user/pgpool/pgpool_opstore.conf", context=generate_pgpool_context("opstore"), backup=False)
     
-    upload_template(filename=BASEP+"pgpool_triplestore.conf", destination="/home/ubuntu/pgpool/pgpool_triplestore.conf", context=generate_pgpool_context("triplestore"), backup=False)
+    upload_template(filename=BASEP+"pgpool_triplestore.conf", destination="/home/ec2-user/pgpool/pgpool_triplestore.conf", context=generate_pgpool_context("triplestore"), backup=False)
     
     
 def install_pgpool(group, update):
@@ -297,7 +297,7 @@ def install_pgpool(group, update):
             run("./configure")
             run("make")
             sudo("make install")
-        with cd("/home/ubuntu/"):
+        with cd("/home/ec2-user/"):
             if not exists("pgpool"):
                 run("mkdir pgpool")
             with cd("pgpool"):
@@ -314,7 +314,7 @@ def update_wsgear_config(group):
     BASEP = get_basep(group)
     con = {}
     con["server_list"] = INV["gearmanjob_nodes"]
-    upload_template(filename=BASEP+"gearman_servers.py", destination="/home/ubuntu/ws_gear/ws_gear/gearman_servers.py", context=con, backup=False)
+    upload_template(filename=BASEP+"gearman_servers.py", destination="/home/ec2-user/ws_gear/ws_gear/gearman_servers.py", context=con, backup=False)
 
 
 def install_wsgear(group, update):
@@ -330,7 +330,7 @@ def install_wsgear(group, update):
             run(". env/bin/activate && pip install -r ws_gear/requirements.txt")
         install_haproxy(group, update)
     else:
-        with cd("/home/ubuntu/ws_gear/ws_gear/"):
+        with cd("/home/ec2-user/ws_gear/ws_gear/"):
             run("git pull")
             run(". ../env/bin/activate && pip install -r requirements.txt")
     update_haproxy(group)   
@@ -341,7 +341,7 @@ def install_wsgear(group, update):
 #bucky
 def update_bucky(group):
     BASEP = get_basep(group)
-    put(BASEP+"bucky.conf", "/home/ubuntu/bucky/bucky.conf")
+    put(BASEP+"bucky.conf", "/home/ec2-user/bucky/bucky.conf")
 
 def install_bucky(group, update):
     if not update:
@@ -378,7 +378,7 @@ def install_graphite(group, update):
         sudo("pip install https://github.com/graphite-project/ceres/tarball/master")
         sudo("pip install carbon whisper graphite-web supervisor daemonize")
         #preparing the packages
-        sudo("sudo chown ubuntu -R /opt")
+        sudo("sudo chown ec2-user -R /opt")
         run("chmod +x /opt/graphite/webapp/graphite/manage.py")
         #because we need to run syncdb on installation, we must have the config in local_settings.py
         #we probably won't be able to update local_settings...
@@ -396,7 +396,7 @@ def tsstore(update=False):
     else:
         print " ==== Will now install tsstore. ===="
     group = "tsstore"
-    with cd("/home/ubuntu/"):
+    with cd("/home/ec2-user/"):
         sudo("apt-get update")
         install_base(group, update)
         install_cassandra(group, update)
@@ -408,7 +408,7 @@ def opstore(slave=False, group="opstore"):
         print " ==== Will now install %s master. ==== " % group
     else:
         print " ==== Will now install %s slave. ====" % group
-    with cd("/home/ubuntu/"):
+    with cd("/home/ec2-user/"):
         sudo("apt-get update")
         install_base(group, False)
         install_postgres(group, slave)
@@ -425,7 +425,9 @@ def gearmanjob(update=False):
     else:
         print " ==== Will now update gearman jobserver. ===="
     group = "gearmanjobserver"
-    with cd("/home/ubuntu/"):
+    with cd("/home/ec2-user/"):
+        sudo("apt-get update")
+        sudo("apt-get install python-software-properties")
         sudo("add-apt-repository ppa:gearman-developers/ppa")
         sudo("apt-get update")
         install_base(group, update)
@@ -445,7 +447,7 @@ def api(update=False):
     else:
         print " ==== Will now install api. ===="
     group = "api"
-    with cd("/home/ubuntu/"):
+    with cd("/home/ec2-user/"):
         sudo("apt-get update")
         install_base(group, update)
         install_api(group, update)
@@ -464,11 +466,12 @@ def workers(update=False):
     else:
         print " ==== Will now install api. ===="
     group = "workers"
-    with cd("/home/ubuntu/"):
+    with cd("/home/ec2-user/"):
         sudo("apt-get update")    
         install_base(group, update)
         install_wsgear(group, update)
         install_haproxy(group, update)
+        #install_nginx(group, update)
         install_supervisor(group, update)
 
 
@@ -480,7 +483,7 @@ def metric(update=False):
     else:
         print " ==== Will now install api. ===="
     group = "metric"
-    with cd("/home/ubuntu"):
+    with cd("/home/ec2-user"):
         sudo("apt-get update")
         install_base(group, update)
         install_bucky(group, update)

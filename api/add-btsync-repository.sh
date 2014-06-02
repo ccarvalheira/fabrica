@@ -85,7 +85,7 @@ echo "Determining distribution code name..."
 if which lsb_release 2> /dev/null > /dev/null; then
 	CODENAME=`lsb_release -cs`
 	case "${CODENAME}" in
-	# detected ubuntu versions
+	# detected ec2-user versions
 	lucid)		;;
 	precise)	;;
 	quantal)	;;

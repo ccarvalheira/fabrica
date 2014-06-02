@@ -1,5 +1,5 @@
 #! /bin/bash
-cd /home/ubuntu
+cd /home/ec2-user
 if [ ! -f apache-cassandra-2.0.6-bin.tar.gz ]; then
   wget http://mirrors.fe.up.pt/pub/apache/cassandra/2.0.6/apache-cassandra-2.0.6-bin.tar.gz
   tar xvf apache-cassandra-2.0.6-bin.tar.gz
@@ -12,12 +12,12 @@ if [ ! -d supervisor ]; then
   cd supervisor
   mkdir log
   wget 192.168.186.182/tsstore/supervisord.conf
-  cd /home/ubuntu
+  cd /home/ec2-user
   wget 192.168.186.182/tsstore/upstart_supervisor.conf
   sudo mv upstart_supervisor.conf /etc/init/supervisor.conf
   sudo service supervisor start
 fi
-cd /home/ubuntu
+cd /home/ec2-user
 wget 192.168.186.182/tsstore/cassandra.yaml
 mv cassandra.yaml cassandra/conf/cassandra.yaml
 wget 192.168.186.182/tsstore/log4j-server.properties

@@ -1,7 +1,7 @@
 #! /bin/sh
 #sudo apt-get update
 sudo apt-get install postgresql collectd -y
-cd /home/ubuntu
+cd /home/ec2-user
 wget 192.168.186.182/tsstore/collectd.conf
 sudo mv collectd.conf /etc/collectd/
 sudo service collectd restart

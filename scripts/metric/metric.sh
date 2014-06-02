@@ -1,7 +1,7 @@
 #! /bin/sh
 #sudo apt-get update
 sudo apt-get install collectd python-virtualenv python-dev git-core libcairo2-dev python-cairo -y
-cd /home/ubuntu
+cd /home/ec2-user
 wget 192.168.186.182/tsstore/collectd.conf
 sudo mv collectd.conf /etc/collectd/collectd.conf
 sudo service collectd restart
@@ -11,12 +11,12 @@ if [ ! -d bucky ]; then
   virtualenv env
   . env/bin/activate
   pip install bucky
-  cd /home/ubuntu
+  cd /home/ec2-user
   wget 192.168.186.182/metric/bucky.conf
   mv bucky.conf bucky/
   deactivate
 fi
-cd /home/ubuntu
+cd /home/ec2-user
 if [ ! -d graphite-web ]; then
   git clone https://github.com/graphite-project/graphite-web.git
   cd graphite-web
@@ -29,7 +29,7 @@ if [ ! -d carbon ]; then
   sudo pip install -r requirements.txt
   cd..
 fi
-cd /home/ubuntu
+cd /home/ec2-user
 sudo pip install django==1.4
 #sudo pip install https://github.com/graphite-project/ceres/tarball/master
 #sudo pip install carbon whisper graphite-web supervisor daemonize
@@ -39,16 +39,16 @@ wget 192.168.186.182/metric/storage-schemas.conf.example
 sudo cp storage-schemas.conf.example /opt/graphite/conf/storage-schemas.conf
 sudo /opt/graphite/bin/carbon-cache.py start
 
-cd /home/ubuntu
+cd /home/ec2-user
 wget 192.168.186.182/metric/local_settings.py.example
 sudo cp local_settings.py.example /opt/graphite/webapp/graphite/local_settings.py
 
 if [ ! -d supervisor ]; then
-  cd /home/ubuntu
+  cd /home/ec2-user
   mkdir supervisor
   cd supervisor
   mkdir log
-  cd /home/ubuntu
+  cd /home/ec2-user
   wget 192.168.186.182/metric/supervisord.conf
   mv supervisord.conf supervisor/supervisord.conf
   wget 192.168.186.182/tsstore/upstart_supervisor.conf
@@ -56,10 +56,10 @@ if [ ! -d supervisor ]; then
   sudo service supervisor start
 fi
 
-sudo chown ubuntu -R /opt
+sudo chown ec2-user -R /opt
 chmod +x /opt/graphite/webapp/graphite/manage.py
 /opt/graphite/webapp/graphite/manage.py syncdb
-cd /home/ubuntu
+cd /home/ec2-user
 rm *.example
 rm *.conf
 rm metric.sh
